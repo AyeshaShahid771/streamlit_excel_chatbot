@@ -54,10 +54,10 @@ st.markdown(
     /* Scrollable recent chats list - keeps New Chat and title fixed */
     .recent-chats-list {
         flex: 1 1 auto !important;
-        max-height: calc(100vh - 220px) !important; /* adjust as needed for header/input */
+        max-height: calc(100vh - 220px) !important;
         overflow-y: auto !important;
         overflow-x: hidden !important;
-        padding-right: 6px !important; /* room for scrollbar */
+        padding-right: 6px !important;
         margin-top: 6px !important;
     }
     .recent-chats-list::-webkit-scrollbar { width: 6px; }
@@ -194,14 +194,13 @@ st.markdown(
     /* Chat Area */
     .chat-container { background: transparent; padding: 0; }
 
-    .message-wrapper { display: flex; margin-bottom: 12px; }
+    .message-wrapper { display: flex; margin-bottom: 12px; width: 100%; }
     .message-wrapper.user { justify-content: flex-end; }
     .message-wrapper.assistant { justify-content: flex-start; }
 
     .message {
         padding: 12px 16px;
         border-radius: 12px;
-        max-width: 75%;
         display: inline-block;
         min-width: 48px;
         white-space: normal;
@@ -211,10 +210,48 @@ st.markdown(
         font-size: 14px;
         line-height: 1.5;
     }
-    .message.user { background: var(--primary); color: white; border-radius: 16px 16px 4px 16px; }
-    .message.assistant { background: var(--card); color: var(--text); border: 1px solid var(--border); border-radius: 16px 16px 16px 4px; }
+
+    .message.user { 
+        background: var(--primary); 
+        color: white; 
+        border-radius: 16px 16px 4px 16px;
+        max-width: 75%;
+    }
+
+    .message.assistant { 
+        background: var(--card); 
+        color: var(--text); 
+        border: 1px solid var(--border); 
+        border-radius: 16px 16px 16px 4px;
+        width: fit-content;
+        max-width: calc(100% - 20px);
+    }
 
     .message-time { font-size: 11px; opacity: 0.7; margin-top: 4px; }
+
+    /* Table styling inside messages */
+    .message table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 12px;
+    }
+
+    .message table td,
+    .message table th {
+        padding: 6px 8px;
+        border: 1px solid rgba(0,0,0,0.1);
+        text-align: left;
+    }
+
+    .message table th {
+        background: rgba(0,0,0,0.05);
+        font-weight: 600;
+    }
+
+    /* Scrollable content for very wide tables */
+    .message {
+        overflow-x: auto;
+    }
 
     /* Input Area */
     .input-container { border-top: 1px solid var(--border); padding-top: 16px; margin-top: 20px; }
@@ -294,7 +331,6 @@ st.markdown(
 
 # --- API Configuration ---
 try:
-    # prefer an explicit CHAT_API_URL from secrets, otherwise fall back to the deployed backend
     DEFAULT_API = st.secrets.get(
         "CHAT_API_URL", "https://excel-chatbot-rag.vercel.app/chat"
     )
@@ -309,27 +345,21 @@ if "session_id" not in st.session_state:
     st.session_state.api_url = DEFAULT_API
 
 
-# Normalize API URL helper: if user pasted an OpenAPI docs path (e.g. .../docs#/default/chat_chat_post)
-# attempt to convert it to the actual /chat endpoint. Also ensure it ends with /chat.
 def normalize_api_url(url: str) -> str:
     if not url:
         return url
     u = url.strip()
-    # If it's the OpenAPI docs entry containing '#', strip fragment
     if "#" in u:
         u = u.split("#")[0]
-    # If user gave base path with /docs or /docs/, replace with base
     if u.endswith("/docs"):
         u = u[:-5]
     if u.endswith("/docs/"):
         u = u[:-6]
-    # If it doesn't end with /chat, append /chat
     if not u.endswith("/chat"):
         u = u.rstrip("/") + "/chat"
     return u
 
 
-# Normalize any preconfigured API URL
 st.session_state.api_url = normalize_api_url(st.session_state.api_url)
 
 
@@ -496,7 +526,6 @@ with col_sidebar:
             unsafe_allow_html=True,
         )
     else:
-        # wrap the list in a scrollable container so it doesn't extend page height
         st.markdown("<div class='recent-chats-list'>", unsafe_allow_html=True)
         recent = list(reversed(st.session_state.sessions[-8:]))
         for i, s in enumerate(recent):
@@ -607,7 +636,6 @@ components.html(
             var mo = new MutationObserver(function(){ bindSubmitOnEnter(); });
             mo.observe(document.body, { childList: true, subtree: true });
             
-            // Adjust recent chats list height so it reaches the chat input and becomes scrollable
             function adjustRecentChatsHeight() {
                 try {
                     var recent = document.querySelector('.recent-chats-list');
@@ -616,7 +644,6 @@ components.html(
                     if (!recent || !sidebar || !input) return;
                     var sidebarTop = sidebar.getBoundingClientRect().top;
                     var inputTop = input.getBoundingClientRect().top;
-                    // compute available height inside sidebar up to the input's top (minus small padding)
                     var available = Math.max(80, Math.floor(inputTop - sidebarTop - 12));
                     recent.style.maxHeight = available + 'px';
                     recent.style.overflowY = 'auto';
@@ -626,7 +653,6 @@ components.html(
                 }
             }
 
-            // run now and on resize / mutation
             adjustRecentChatsHeight();
             window.addEventListener('resize', adjustRecentChatsHeight);
             var mo2 = new MutationObserver(function(){ adjustRecentChatsHeight(); });
