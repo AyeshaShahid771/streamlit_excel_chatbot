@@ -330,12 +330,7 @@ st.markdown(
 )
 
 # --- API Configuration ---
-try:
-    DEFAULT_API = st.secrets.get(
-        "CHAT_API_URL", "https://excel-chatbot-rag.vercel.app/chat"
-    )
-except Exception:
-    DEFAULT_API = "https://excel-chatbot-rag.vercel.app/chat"
+DEFAULT_API = st.secrets.get("CHAT_API_URL", "https://excel-chatbot-rag.vercel.app/chat")
 
 # --- Session State ---
 if "session_id" not in st.session_state:
@@ -391,6 +386,19 @@ def start_new_session():
             )
     st.session_state.session_id = str(uuid.uuid4())
     st.session_state.history = []
+
+
+def safe_rerun():
+    """Call whichever rerun function is available across Streamlit versions."""
+    for name in ("rerun", "experimental_rerun", "_rerun"):
+        fn = getattr(st, name, None)
+        if callable(fn):
+            try:
+                return fn()
+            except Exception:
+                # ignore and try next
+                continue
+    return None
 
 
 def send_message(message: str) -> Optional[str]:
@@ -500,7 +508,7 @@ def delete_session(session_id: str):
         st.session_state.loaded_session = None
         st.session_state.session_id = str(uuid.uuid4())
         st.session_state.history = []
-    st.rerun()
+    safe_rerun()
 
 
 # --- Main Layout ---
@@ -608,7 +616,7 @@ with col_main:
                 response = send_message(user_input.strip())
                 add_message("assistant", response)
 
-            st.rerun()
+            safe_rerun()
 
         st.markdown("</div>", unsafe_allow_html=True)
 
