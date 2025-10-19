@@ -201,12 +201,10 @@ st.markdown(
     .message {
         padding: 12px 16px;
         border-radius: 12px;
-        /* Allow assistant responses to be wider for better readability */
-        max-width: 88%;
+        max-width: 75%;
         display: inline-block;
         min-width: 48px;
-        /* Preserve paragraph breaks and ensure long words wrap */
-        white-space: pre-wrap !important;
+        white-space: normal;
         overflow-wrap: anywhere;
         word-wrap: break-word;
         box-shadow: 0 2px 8px rgba(0,0,0,0.06);
