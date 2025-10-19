@@ -341,10 +341,8 @@ except Exception:
 if "session_id" not in st.session_state:
     st.session_state.session_id = str(uuid.uuid4())
     st.session_state.history = []
+    st.session_state.sessions = []
     st.session_state.api_url = DEFAULT_API
-    # ensure sessions key exists for compatibility with older code
-    if "sessions" not in st.session_state:
-        st.session_state.sessions = []
 
 
 def normalize_api_url(url: str) -> str:
@@ -378,28 +376,21 @@ def add_message(role: str, content: Optional[str]):
 
 
 def start_new_session():
-    # start a fresh session by resetting the session id and clearing history
+    if st.session_state.history:
+        preview = st.session_state.history[-1]["content"][:80]
+        if not any(
+            s.get("id") == st.session_state.session_id
+            for s in st.session_state.sessions
+        ):
+            st.session_state.sessions.append(
+                {
+                    "id": st.session_state.session_id,
+                    "preview": preview,
+                    "created": datetime.now(timezone.utc).strftime("%b %d, %H:%M"),
+                }
+            )
     st.session_state.session_id = str(uuid.uuid4())
     st.session_state.history = []
-def safe_rerun():
-    """Call whichever rerun function is available across Streamlit versions.
-
-    Uses getattr and a try/except around the call to avoid raising AttributeError
-    if a stub or proxy weirdly exposes the name but the call fails.
-    """
-    for name in ("rerun", "experimental_rerun", "_rerun"):
-        fn = getattr(st, name, None)
-        if callable(fn):
-            try:
-                return fn()
-            except Exception:
-                # swallow errors from rerun implementations and continue trying
-                try:
-                    # last resort: ignore any exception
-                    return None
-                except Exception:
-                    return None
-    return None
 
 
 def send_message(message: str) -> Optional[str]:
@@ -411,7 +402,7 @@ def send_message(message: str) -> Optional[str]:
         }
         cookies = {"agent_session_id": st.session_state.session_id}
         response = requests.post(
-            st.session_state.api_url, json=payload, timeout=120, cookies=cookies
+            st.session_state.api_url, json=payload, timeout=60, cookies=cookies
         )
 
         if response.status_code == 200:
@@ -429,7 +420,87 @@ def send_message(message: str) -> Optional[str]:
         )
     except Exception as e:
         return f"❌ Error: {str(e)}"
-    
+
+
+def load_session_history(session_id: str):
+    try:
+        base = st.session_state.api_url.rstrip("/")
+        if base.endswith("/chat"):
+            history_url = base[:-5] + "/chat-history"
+        else:
+            history_url = base + "/chat-history"
+
+        params = {"session_id": session_id}
+        cookies = {"agent_session_id": session_id}
+        resp = requests.get(history_url, timeout=30, cookies=cookies, params=params)
+        if resp.status_code == 200:
+            data = resp.json()
+            msgs = data.get("messages", []) if isinstance(data, dict) else []
+            st.session_state.history = []
+            for m in msgs:
+                st.session_state.history.append(
+                    {
+                        "role": "user",
+                        "content": m.get("user_message", ""),
+                        "ts": m.get("timestamp", ""),
+                    }
+                )
+                st.session_state.history.append(
+                    {
+                        "role": "assistant",
+                        "content": m.get("agent_reply", ""),
+                        "ts": m.get("timestamp", ""),
+                    }
+                )
+            st.session_state.session_id = session_id
+            st.session_state.loaded_session = session_id
+            existing = [
+                s for s in st.session_state.sessions if s.get("id") == session_id
+            ]
+            if not existing:
+                preview = (
+                    st.session_state.history[-1]["content"][:80]
+                    if st.session_state.history
+                    else ""
+                )
+                st.session_state.sessions.append(
+                    {
+                        "id": session_id,
+                        "preview": preview,
+                        "created": datetime.now(timezone.utc).strftime("%b %d, %H:%M"),
+                    }
+                )
+        else:
+            st.error(f"Failed to load history: {resp.status_code}")
+    except Exception as e:
+        st.error(f"Error loading history: {e}")
+
+
+def delete_session(session_id: str):
+    try:
+        base = st.session_state.api_url.rstrip("/")
+        if base.endswith("/chat"):
+            del_url = base[:-5] + "/chat-history"
+        else:
+            del_url = base + "/chat-history"
+
+        params = {"session_id": session_id}
+        cookies = {"agent_session_id": session_id}
+        resp = requests.delete(del_url, timeout=30, params=params, cookies=cookies)
+        if resp.status_code not in (200, 204):
+            st.warning(f"Delete returned {resp.status_code}; removing locally.")
+
+    except Exception:
+        pass
+
+    st.session_state.sessions = [
+        s for s in st.session_state.sessions if s.get("id") != session_id
+    ]
+    if st.session_state.get("loaded_session") == session_id:
+        st.session_state.loaded_session = None
+        st.session_state.session_id = str(uuid.uuid4())
+        st.session_state.history = []
+    st.rerun()
 
 
 # --- Main Layout ---
@@ -447,11 +518,39 @@ with col_sidebar:
     if st.button("➕ New Chat", key="new_chat_btn", use_container_width=True):
         start_new_session()
 
-    # Recent chats removed for a simplified UI
-    st.markdown(
-        "<div style='color: var(--text-muted); font-size: 13px; text-align: center; padding: 12px 0;'>Recent chats are disabled in this UI.</div>",
-        unsafe_allow_html=True,
-    )
+    st.markdown("<div class='sidebar-title'>Recent Chats</div>", unsafe_allow_html=True)
+
+    if not st.session_state.sessions:
+        st.markdown(
+            "<div style='color: var(--text-muted); font-size: 13px; text-align: center; padding: 20px 0;'>No previous chats</div>",
+            unsafe_allow_html=True,
+        )
+    else:
+        st.markdown("<div class='recent-chats-list'>", unsafe_allow_html=True)
+        recent = list(reversed(st.session_state.sessions[-8:]))
+        for i, s in enumerate(recent):
+            col_preview, col_delete = st.columns([0.8, 0.2], gap="small")
+
+            with col_preview:
+                st.markdown(
+                    "<div class='session-item-wrapper'>", unsafe_allow_html=True
+                )
+                session_key = f"session_{s.get('id')}_{i}"
+                if st.button(
+                    label=f"{s['created']} - {s['preview']}...",
+                    key=session_key,
+                    help="Load this chat",
+                ):
+                    load_session_history(s.get("id"))
+                st.markdown("</div>", unsafe_allow_html=True)
+
+            with col_delete:
+                st.markdown("<div class='session-delete-btn'>", unsafe_allow_html=True)
+                if st.button("🗑", key=f"delete_{i}", help="Delete chat"):
+                    delete_session(s.get("id"))
+                st.markdown("</div>", unsafe_allow_html=True)
+        st.markdown("</div>", unsafe_allow_html=True)
+
     st.markdown("</div>", unsafe_allow_html=True)
 
 # --- Main Chat Area ---
@@ -509,7 +608,7 @@ with col_main:
                 response = send_message(user_input.strip())
                 add_message("assistant", response)
 
-                safe_rerun()
+            st.rerun()
 
         st.markdown("</div>", unsafe_allow_html=True)
 
@@ -537,7 +636,27 @@ components.html(
             var mo = new MutationObserver(function(){ bindSubmitOnEnter(); });
             mo.observe(document.body, { childList: true, subtree: true });
             
-            // Recent chats removed: no additional DOM adjustments required
+            function adjustRecentChatsHeight() {
+                try {
+                    var recent = document.querySelector('.recent-chats-list');
+                    var sidebar = document.querySelector('.sidebar-section');
+                    var input = document.querySelector('.input-container');
+                    if (!recent || !sidebar || !input) return;
+                    var sidebarTop = sidebar.getBoundingClientRect().top;
+                    var inputTop = input.getBoundingClientRect().top;
+                    var available = Math.max(80, Math.floor(inputTop - sidebarTop - 12));
+                    recent.style.maxHeight = available + 'px';
+                    recent.style.overflowY = 'auto';
+                    recent.style.overflowX = 'hidden';
+                } catch (e) {
+                    // ignore
+                }
+            }
+
+            adjustRecentChatsHeight();
+            window.addEventListener('resize', adjustRecentChatsHeight);
+            var mo2 = new MutationObserver(function(){ adjustRecentChatsHeight(); });
+            mo2.observe(document.body, { childList: true, subtree: true });
         })();
         </script>
         """,
