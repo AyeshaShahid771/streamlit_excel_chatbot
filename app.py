@@ -470,7 +470,7 @@ def delete_session(session_id: str):
         st.session_state.loaded_session = None
         st.session_state.session_id = str(uuid.uuid4())
         st.session_state.history = []
-    st.experimental_rerun()
+    st.rerun()
 
 
 # --- Main Layout ---
@@ -579,7 +579,7 @@ with col_main:
                 response = send_message(user_input.strip())
                 add_message("assistant", response)
 
-            st.experimental_rerun()
+            st.rerun()
 
         st.markdown("</div>", unsafe_allow_html=True)
 
