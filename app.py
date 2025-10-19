@@ -381,6 +381,25 @@ def start_new_session():
     # start a fresh session by resetting the session id and clearing history
     st.session_state.session_id = str(uuid.uuid4())
     st.session_state.history = []
+def safe_rerun():
+    """Call whichever rerun function is available across Streamlit versions.
+
+    Uses getattr and a try/except around the call to avoid raising AttributeError
+    if a stub or proxy weirdly exposes the name but the call fails.
+    """
+    for name in ("rerun", "experimental_rerun", "_rerun"):
+        fn = getattr(st, name, None)
+        if callable(fn):
+            try:
+                return fn()
+            except Exception:
+                # swallow errors from rerun implementations and continue trying
+                try:
+                    # last resort: ignore any exception
+                    return None
+                except Exception:
+                    return None
+    return None
 
 
 def send_message(message: str) -> Optional[str]:
@@ -490,7 +509,7 @@ with col_main:
                 response = send_message(user_input.strip())
                 add_message("assistant", response)
 
-            st.rerun()
+                safe_rerun()
 
         st.markdown("</div>", unsafe_allow_html=True)
 
