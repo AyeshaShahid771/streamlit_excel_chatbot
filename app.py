@@ -411,7 +411,7 @@ def send_message(message: str) -> Optional[str]:
         }
         cookies = {"agent_session_id": st.session_state.session_id}
         response = requests.post(
-            st.session_state.api_url, json=payload, timeout=60, cookies=cookies
+            st.session_state.api_url, json=payload, timeout=120, cookies=cookies
         )
 
         if response.status_code == 200:
