@@ -1,5 +1,4 @@
 import uuid
-from datetime import datetime, timezone
 from typing import Optional
 
 import requests
@@ -32,7 +31,6 @@ st.markdown(
 
     /* Remove Streamlit top menu/header whitespace and adjust app padding */
     header[data-testid="stHeader"] { display: none; }
-    /* Streamlit may add a top padding to the main block; remove it */
     .css-18e3th9, .main, .block-container { padding-top: 0rem !important; margin-top: 0rem !important; }
 
     /* Header */
@@ -51,7 +49,6 @@ st.markdown(
     .sidebar-section { display: flex; flex-direction: column; background: var(--card); border-radius: 10px; padding: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
     .sidebar-title { font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px; opacity: 0.8; }
 
-    /* Scrollable recent chats list - keeps New Chat and title fixed */
     .recent-chats-list {
         flex: 1 1 auto !important;
         max-height: calc(100vh - 220px) !important;
@@ -77,7 +74,6 @@ st.markdown(
     }
     .new-chat-btn:hover { background: var(--primary-dark); transform: translateY(-2px); box-shadow: 0 4px 12px rgba(22, 163, 74, 0.3); }
 
-    /* Session row container - remove all spacing */
     .session-row {
         display: flex;
         gap: 6px;
@@ -101,13 +97,11 @@ st.markdown(
         word-break: break-word;
     }
 
-    /* Hide any small empty rounded container Streamlit sometimes injects above buttons */
     .sidebar-section .stButton>div[role="button"]:empty, .sidebar-section .stButton>button:empty { display: none !important; }
     .sidebar-section > div[role="presentation"] { display: none !important; }
     .sidebar-section > div[aria-hidden="true"] { display: none !important; }
     .sidebar-section > div.css-1kidpj5 { display: none !important; }
     
-    /* Remove all Streamlit-generated spacing */
     .sidebar-section > div { 
         margin: 0 !important; 
         padding: 0 !important; 
@@ -122,7 +116,6 @@ st.markdown(
     .session-item:hover { background: transparent; border-left: 0; }
     .session-item.active { background: var(--success); border-left: 0; font-weight: 500; }
 
-    /* Session preview button wrapper */
     .session-item-wrapper {
         margin: 0 !important;
         padding: 0 !important;
@@ -135,7 +128,6 @@ st.markdown(
         width: 100%;
     }
 
-    /* Compact preview button */
     .session-item-wrapper .stButton>button {
         background: var(--card) !important;
         border: 1px solid var(--border) !important;
@@ -160,7 +152,6 @@ st.markdown(
         border-color: #d4d4d4 !important;
     }
 
-    /* Compact delete button */
     .session-delete-btn {
         margin: 0 !important;
         padding: 0 !important;
@@ -191,7 +182,6 @@ st.markdown(
         border-radius: 4px !important;
     }
 
-    /* Chat Area */
     .chat-container { background: transparent; padding: 0; }
 
     .message-wrapper { display: flex; margin-bottom: 12px; width: 100%; }
@@ -229,7 +219,6 @@ st.markdown(
 
     .message-time { font-size: 11px; opacity: 0.7; margin-top: 4px; }
 
-    /* Table styling inside messages */
     .message table {
         width: 100%;
         border-collapse: collapse;
@@ -248,12 +237,10 @@ st.markdown(
         font-weight: 600;
     }
 
-    /* Scrollable content for very wide tables */
     .message {
         overflow-x: auto;
     }
 
-    /* Input Area */
     .input-container { border-top: 1px solid var(--border); padding-top: 16px; margin-top: 20px; }
     .input-wrapper { display: flex; gap: 10px; align-items: flex-end; }
     textarea { border: 1px solid var(--border) !important; border-radius: 10px !important; resize: vertical; }
@@ -264,7 +251,6 @@ st.markdown(
     textarea[aria-label] { max-width: 100% !important; }
     textarea { min-height: 80px !important; }
     
-    /* Send button styling */
     .input-container .stButton>button[title="↑"],
     .input-container .stButton>div[role="button"][title="↑"],
     .input-container .stButton>button[aria-label="↑"],
@@ -295,29 +281,24 @@ st.markdown(
         box-shadow: 0 10px 28px rgba(15,157,88,0.28) !important;
     }
 
-    /* Scrollbar */
     ::-webkit-scrollbar { width: 6px; }
     ::-webkit-scrollbar-track { background: var(--bg); }
     ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
     ::-webkit-scrollbar-thumb:hover { background: var(--primary); }
 
-    /* Reduce large bottom whitespace so page ends at the chat input */
     html, body, .stApp {
         height: auto !important;
         min-height: 0 !important;
     }
 
-    /* Remove padding/margin and min-height Streamlit may add */
     .main, .block-container, .css-18e3th9 {
         padding-bottom: 0 !important;
         margin-bottom: 0 !important;
         min-height: 0 !important;
     }
 
-    /* Make chat container flush with bottom */
     .chat-container { padding-bottom: 0 !important; margin-bottom: 0 !important; }
 
-    /* Hide Streamlit footer which reserves vertical space */
     footer[data-testid="stFooter"], footer {
         display: none !important;
         margin: 0 !important;
@@ -330,13 +311,14 @@ st.markdown(
 )
 
 # --- API Configuration ---
-DEFAULT_API = st.secrets.get("CHAT_API_URL", "https://excel-chatbot-rag.vercel.app/chat")
+DEFAULT_API = st.secrets.get(
+    "CHAT_API_URL", "https://excel-chatbot-rag.vercel.app/chat  "
+)
 
 # --- Session State ---
 if "session_id" not in st.session_state:
     st.session_state.session_id = str(uuid.uuid4())
     st.session_state.history = []
-    st.session_state.sessions = []
     st.session_state.api_url = DEFAULT_API
 
 
@@ -361,42 +343,22 @@ st.session_state.api_url = normalize_api_url(st.session_state.api_url)
 # --- Helper Functions ---
 def add_message(role: str, content: Optional[str]):
     safe_content = content or ""
-    st.session_state.history.append(
-        {
-            "role": role,
-            "content": safe_content,
-            "ts": datetime.now(timezone.utc).strftime("%H:%M"),
-        }
-    )
+    # no timestamps stored (user requested no time display)
+    st.session_state.history.append({"role": role, "content": safe_content})
 
 
 def start_new_session():
-    if st.session_state.history:
-        preview = st.session_state.history[-1]["content"][:80]
-        if not any(
-            s.get("id") == st.session_state.session_id
-            for s in st.session_state.sessions
-        ):
-            st.session_state.sessions.append(
-                {
-                    "id": st.session_state.session_id,
-                    "preview": preview,
-                    "created": datetime.now(timezone.utc).strftime("%b %d, %H:%M"),
-                }
-            )
     st.session_state.session_id = str(uuid.uuid4())
     st.session_state.history = []
 
 
 def safe_rerun():
-    """Call whichever rerun function is available across Streamlit versions."""
     for name in ("rerun", "experimental_rerun", "_rerun"):
         fn = getattr(st, name, None)
         if callable(fn):
             try:
                 return fn()
             except Exception:
-                # ignore and try next
                 continue
     return None
 
@@ -430,87 +392,6 @@ def send_message(message: str) -> Optional[str]:
         return f"❌ Error: {str(e)}"
 
 
-def load_session_history(session_id: str):
-    try:
-        base = st.session_state.api_url.rstrip("/")
-        if base.endswith("/chat"):
-            history_url = base[:-5] + "/chat-history"
-        else:
-            history_url = base + "/chat-history"
-
-        params = {"session_id": session_id}
-        cookies = {"agent_session_id": session_id}
-        resp = requests.get(history_url, timeout=30, cookies=cookies, params=params)
-        if resp.status_code == 200:
-            data = resp.json()
-            msgs = data.get("messages", []) if isinstance(data, dict) else []
-            st.session_state.history = []
-            for m in msgs:
-                st.session_state.history.append(
-                    {
-                        "role": "user",
-                        "content": m.get("user_message", ""),
-                        "ts": m.get("timestamp", ""),
-                    }
-                )
-                st.session_state.history.append(
-                    {
-                        "role": "assistant",
-                        "content": m.get("agent_reply", ""),
-                        "ts": m.get("timestamp", ""),
-                    }
-                )
-            st.session_state.session_id = session_id
-            st.session_state.loaded_session = session_id
-            existing = [
-                s for s in st.session_state.sessions if s.get("id") == session_id
-            ]
-            if not existing:
-                preview = (
-                    st.session_state.history[-1]["content"][:80]
-                    if st.session_state.history
-                    else ""
-                )
-                st.session_state.sessions.append(
-                    {
-                        "id": session_id,
-                        "preview": preview,
-                        "created": datetime.now(timezone.utc).strftime("%b %d, %H:%M"),
-                    }
-                )
-        else:
-            st.error(f"Failed to load history: {resp.status_code}")
-    except Exception as e:
-        st.error(f"Error loading history: {e}")
-
-
-def delete_session(session_id: str):
-    try:
-        base = st.session_state.api_url.rstrip("/")
-        if base.endswith("/chat"):
-            del_url = base[:-5] + "/chat-history"
-        else:
-            del_url = base + "/chat-history"
-
-        params = {"session_id": session_id}
-        cookies = {"agent_session_id": session_id}
-        resp = requests.delete(del_url, timeout=30, params=params, cookies=cookies)
-        if resp.status_code not in (200, 204):
-            st.warning(f"Delete returned {resp.status_code}; removing locally.")
-
-    except Exception:
-        pass
-
-    st.session_state.sessions = [
-        s for s in st.session_state.sessions if s.get("id") != session_id
-    ]
-    if st.session_state.get("loaded_session") == session_id:
-        st.session_state.loaded_session = None
-        st.session_state.session_id = str(uuid.uuid4())
-        st.session_state.history = []
-    safe_rerun()
-
-
 # --- Main Layout ---
 st.markdown(
     "<div class='header-container'><h1 class='header-title'>📊 Data Analyst AI Agent</h1><p class='header-subtitle'>Ask questions about your tables</p></div>",
@@ -525,40 +406,7 @@ with col_sidebar:
 
     if st.button("➕ New Chat", key="new_chat_btn", use_container_width=True):
         start_new_session()
-
-    st.markdown("<div class='sidebar-title'>Recent Chats</div>", unsafe_allow_html=True)
-
-    if not st.session_state.sessions:
-        st.markdown(
-            "<div style='color: var(--text-muted); font-size: 13px; text-align: center; padding: 20px 0;'>No previous chats</div>",
-            unsafe_allow_html=True,
-        )
-    else:
-        st.markdown("<div class='recent-chats-list'>", unsafe_allow_html=True)
-        recent = list(reversed(st.session_state.sessions[-8:]))
-        for i, s in enumerate(recent):
-            col_preview, col_delete = st.columns([0.8, 0.2], gap="small")
-
-            with col_preview:
-                st.markdown(
-                    "<div class='session-item-wrapper'>", unsafe_allow_html=True
-                )
-                session_key = f"session_{s.get('id')}_{i}"
-                if st.button(
-                    label=f"{s['created']} - {s['preview']}...",
-                    key=session_key,
-                    help="Load this chat",
-                ):
-                    load_session_history(s.get("id"))
-                st.markdown("</div>", unsafe_allow_html=True)
-
-            with col_delete:
-                st.markdown("<div class='session-delete-btn'>", unsafe_allow_html=True)
-                if st.button("🗑", key=f"delete_{i}", help="Delete chat"):
-                    delete_session(s.get("id"))
-                st.markdown("</div>", unsafe_allow_html=True)
-        st.markdown("</div>", unsafe_allow_html=True)
-
+    
     st.markdown("</div>", unsafe_allow_html=True)
 
 # --- Main Chat Area ---
@@ -582,8 +430,7 @@ with col_main:
                 role_class = "user" if msg["role"] == "user" else "assistant"
                 st.markdown(
                     f"<div class='message-wrapper {role_class}'>"
-                    f"<div><div class='message {role_class}'>{msg['content']}</div>"
-                    f"<div class='message-time'>{msg['ts']}</div></div>"
+                    f"<div><div class='message {role_class}'>{msg['content']}</div></div>"
                     f"</div>",
                     unsafe_allow_html=True,
                 )
@@ -620,53 +467,52 @@ with col_main:
 
         st.markdown("</div>", unsafe_allow_html=True)
 
-# Inject JS to make Enter key submit the chat form
+# Inject JS for Enter key + time formatting
 components.html(
     """
-        <script>
-        (function() {
-            function bindSubmitOnEnter() {
-                document.querySelectorAll('form').forEach(function(form){
-                    if (form.__enterBound) return;
-                    var textarea = form.querySelector('textarea');
-                    var submit = form.querySelector('button[type="submit"]');
-                    if (!textarea || !submit) return;
-                    form.__enterBound = true;
-                    textarea.addEventListener('keydown', function(e){
-                        if (e.key === 'Enter' && !e.shiftKey && !e.ctrlKey && !e.altKey) {
-                            e.preventDefault();
-                            submit.click();
-                        }
-                    });
+    <script>
+    (function() {
+        function bindSubmitOnEnter() {
+            document.querySelectorAll('form').forEach(function(form){
+                if (form.__enterBound) return;
+                var textarea = form.querySelector('textarea');
+                var submit = form.querySelector('button[type="submit"]');
+                if (!textarea || !submit) return;
+                form.__enterBound = true;
+                textarea.addEventListener('keydown', function(e){
+                    if (e.key === 'Enter' && !e.shiftKey && !e.ctrlKey && !e.altKey) {
+                        e.preventDefault();
+                        submit.click();
+                    }
                 });
-            }
-            bindSubmitOnEnter();
-            var mo = new MutationObserver(function(){ bindSubmitOnEnter(); });
-            mo.observe(document.body, { childList: true, subtree: true });
-            
-            function adjustRecentChatsHeight() {
-                try {
-                    var recent = document.querySelector('.recent-chats-list');
-                    var sidebar = document.querySelector('.sidebar-section');
-                    var input = document.querySelector('.input-container');
-                    if (!recent || !sidebar || !input) return;
-                    var sidebarTop = sidebar.getBoundingClientRect().top;
-                    var inputTop = input.getBoundingClientRect().top;
-                    var available = Math.max(80, Math.floor(inputTop - sidebarTop - 12));
-                    recent.style.maxHeight = available + 'px';
-                    recent.style.overflowY = 'auto';
-                    recent.style.overflowX = 'hidden';
-                } catch (e) {
-                    // ignore
-                }
-            }
+            });
+        }
+        bindSubmitOnEnter();
+        var mo = new MutationObserver(function(){ bindSubmitOnEnter(); });
+        mo.observe(document.body, { childList: true, subtree: true });
+        
+        function adjustRecentChatsHeight() {
+            try {
+                var recent = document.querySelector('.recent-chats-list');
+                var sidebar = document.querySelector('.sidebar-section');
+                var input = document.querySelector('.input-container');
+                if (!recent || !sidebar || !input) return;
+                var sidebarTop = sidebar.getBoundingClientRect().top;
+                var inputTop = input.getBoundingClientRect().top;
+                var available = Math.max(80, Math.floor(inputTop - sidebarTop - 12));
+                recent.style.maxHeight = available + 'px';
+                recent.style.overflowY = 'auto';
+                recent.style.overflowX = 'hidden';
+            } catch (e) {}
+        }
 
-            adjustRecentChatsHeight();
-            window.addEventListener('resize', adjustRecentChatsHeight);
-            var mo2 = new MutationObserver(function(){ adjustRecentChatsHeight(); });
-            mo2.observe(document.body, { childList: true, subtree: true });
-        })();
-        </script>
-        """,
+        adjustRecentChatsHeight();
+        window.addEventListener('resize', adjustRecentChatsHeight);
+        var mo2 = new MutationObserver(function(){ adjustRecentChatsHeight(); });
+        mo2.observe(document.body, { childList: true, subtree: true });
+    })();
+    </script>
+    
+    """,
     height=0,
 )
