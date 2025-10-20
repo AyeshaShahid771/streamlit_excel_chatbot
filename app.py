@@ -184,9 +184,30 @@ st.markdown(
 
     .chat-container { background: transparent; padding: 0; }
 
-    .message-wrapper { display: flex; margin-bottom: 12px; width: 100%; }
-    .message-wrapper.user { justify-content: flex-end; }
-    .message-wrapper.assistant { justify-content: flex-start; }
+    /* ✅ FIXED MESSAGE ALIGNMENT */
+    .message-wrapper {
+        display: flex;
+        align-items: flex-end;
+        justify-content: flex-start;
+        margin-bottom: 12px;
+        width: 100%;
+        gap: 8px;
+    }
+
+    .message-wrapper.user {
+        justify-content: flex-end;
+    }
+
+    .message-wrapper.assistant {
+        justify-content: flex-start;
+    }
+
+    .message-wrapper > div {
+        display: flex;
+        align-items: flex-end;
+        justify-content: flex-end;
+        max-width: 100%;
+    }
 
     .message {
         padding: 12px 16px;
@@ -199,6 +220,7 @@ st.markdown(
         box-shadow: 0 2px 8px rgba(0,0,0,0.06);
         font-size: 14px;
         line-height: 1.5;
+        margin: 0;
     }
 
     .message.user { 
@@ -315,7 +337,7 @@ st.markdown(
         .header-subtitle { font-size: 12px !important; }
 
         /* Stack sidebar and main column vertically */
-        .stApp .row-widget.stColumns, .stApp .css-1lcbmhc.e1fqkh3o2 { /* fallback selectors */
+        .stApp .row-widget.stColumns, .stApp .css-1lcbmhc.e1fqkh3o2 {
             flex-direction: column !important;
         }
 
@@ -332,8 +354,8 @@ st.markdown(
         .message { max-width: 85% !important; font-size: 14px !important; }
         .message.user { margin-left: auto !important; }
         .message.assistant { margin-right: auto !important; }
-        .message-wrapper { align-items: center !important; }
-        .message-wrapper > div { display: flex; align-items: center; }
+        .message-wrapper { align-items: flex-end !important; }
+        .message-wrapper > div { display: flex; align-items: flex-end; }
 
         /* Input area fixed to bottom for easier typing */
         .input-container {
@@ -419,7 +441,7 @@ st.markdown(
 
 # --- API Configuration ---
 DEFAULT_API = st.secrets.get(
-    "CHAT_API_URL", "https://excel-chatbot-rag.vercel.app/chat  "
+    "CHAT_API_URL", "https://excel-chatbot-rag.vercel.app/chat"
 )
 
 # --- Session State ---
@@ -450,7 +472,6 @@ st.session_state.api_url = normalize_api_url(st.session_state.api_url)
 # --- Helper Functions ---
 def add_message(role: str, content: Optional[str]):
     safe_content = content or ""
-    # no timestamps stored (user requested no time display)
     st.session_state.history.append({"role": role, "content": safe_content})
 
 
@@ -572,7 +593,7 @@ with col_main:
 
             safe_rerun()
 
-        st.markdown("</div>", unsafe_allow_html=True)
+    st.markdown("</div>", unsafe_allow_html=True)
 
 # Inject JS for Enter key + time formatting
 components.html(
