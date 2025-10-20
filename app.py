@@ -305,6 +305,113 @@ st.markdown(
         padding: 0 !important;
     }
 
+    /* Mobile responsive tweaks */
+    @media (max-width: 768px) {
+        .header-container {
+            padding: 12px !important;
+            border-radius: 8px !important;
+        }
+        .header-title { font-size: 20px !important; }
+        .header-subtitle { font-size: 12px !important; }
+
+        /* Stack sidebar and main column vertically */
+        .stApp .row-widget.stColumns, .stApp .css-1lcbmhc.e1fqkh3o2 { /* fallback selectors */
+            flex-direction: column !important;
+        }
+
+        .sidebar-section {
+            width: 100% !important;
+            box-shadow: none !important;
+            padding: 8px !important;
+            margin-bottom: 12px !important;
+        }
+
+        .chat-container { padding: 12px !important; }
+
+        /* Message sizing and alignment */
+        .message { max-width: 85% !important; font-size: 14px !important; }
+        .message.user { margin-left: auto !important; }
+        .message.assistant { margin-right: auto !important; }
+        .message-wrapper { align-items: center !important; }
+        .message-wrapper > div { display: flex; align-items: center; }
+
+        /* Input area fixed to bottom for easier typing */
+        .input-container {
+            position: sticky !important;
+            bottom: 0 !important;
+            background: transparent !important;
+            padding: 8px !important;
+            box-shadow: 0 -8px 24px rgba(0,0,0,0.04) !important;
+            z-index: 999 !important;
+        }
+
+        /* Force form inside input-container to layout horizontally on mobile */
+        .input-container form {
+            display: flex !important;
+            flex-direction: row !important;
+            align-items: center !important;
+            gap: 8px !important;
+            width: 100% !important;
+        }
+
+        /* Streamlit column wrappers can add extra divs; target common children */
+        .input-container form > div { display: flex !important; flex: 1 1 auto !important; align-items: center !important; }
+
+        /* Make textarea expand and sit inline with button */
+        .input-container textarea, .input-container .stTextArea textarea, .input-container .stTextArea>div {
+            flex: 1 1 auto !important;
+            width: auto !important;
+            min-height: 56px !important;
+            margin: 0 !important;
+        }
+
+        /* Extra fallbacks for Streamlit's nested wrappers to keep textarea and button on same row */
+        .input-container form > div, .input-container form > div > div {
+            display: flex !important;
+            flex-direction: row !important;
+            align-items: center !important;
+            gap: 8px !important;
+            width: 100% !important;
+        }
+
+        .input-container .stTextArea, .input-container .stTextInput, .input-container textarea, .input-container .stTextArea>div {
+            flex: 1 1 auto !important;
+            width: 100% !important;
+            min-height: 56px !important;
+        }
+
+        .input-container .stButton {
+            flex: 0 0 56px !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            padding: 0 !important;
+            margin: 0 !important;
+        }
+
+        .input-container .stButton>button, .input-container .stButton>div[role="button"] {
+            width: 56px !important;
+            height: 56px !important;
+            padding: 0 !important;
+        }
+
+        /* Keep send button fixed size and inline */
+        .input-container .stButton>button[title="↑"],
+        .input-container .stButton>div[role="button"][title="↑"],
+        .input-container .stButton>button[aria-label="↑"],
+        .input-container .stButton>div[role="button"][aria-label="↑"] {
+            flex: 0 0 56px !important;
+            width: 56px !important;
+            height: 56px !important;
+            padding: 0 !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+        }
+
+        textarea { min-height: 56px !important; }
+    }
+
     </style>
     """,
     unsafe_allow_html=True,
